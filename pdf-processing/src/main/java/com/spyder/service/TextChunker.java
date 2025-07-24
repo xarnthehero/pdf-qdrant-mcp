@@ -1,0 +1,251 @@
+package com.spyder.service;
+
+import com.spyder.model.FontAwareTextStripper;
+import com.spyder.model.DocumentChunk;
+import com.spyder.model.PagedFontResult;
+import com.spyder.model.PagedTextResult;
+import com.spyder.config.ApplicationProperties;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class TextChunker {
+    
+    private final ApplicationProperties properties;
+    
+    private int getChunkSize() {
+        return properties.getPdf().getChunking().getSize();
+    }
+    
+    private int getOverlap() {
+        return properties.getPdf().getChunking().getOverlap();
+    }
+    
+    public List<DocumentChunk> chunkTextWithMetadata(PagedTextResult pagedResult, String sourcePath) {
+        List<DocumentChunk> chunks = new ArrayList<>();
+        Map<Integer, String> pageTexts = pagedResult.getPageTexts();
+        
+        // Extract just the filename from the full path
+        String fileName = java.nio.file.Paths.get(sourcePath).getFileName().toString();
+        int chunkIndex = 0;
+        
+        for (Map.Entry<Integer, String> entry : pageTexts.entrySet()) {
+            int pageNumber = entry.getKey();
+            String pageText = entry.getValue();
+            
+            if (pageText == null || pageText.trim().isEmpty()) {
+                continue;
+            }
+            
+            List<String> pageChunks = chunkText(pageText);
+            
+            for (String chunkContent : pageChunks) {
+                String chapter = detectChapter(chunkContent);
+                DocumentChunk chunk = new DocumentChunk(
+                    chunkContent, 
+                    fileName, 
+                    pageNumber, 
+                    chapter,
+                    null,  // heading
+                    null,  // subheading
+                    chunkIndex++
+                );
+                chunks.add(chunk);
+            }
+        }
+        
+        return chunks;
+    }
+    
+    public List<DocumentChunk> chunkTextWithFontMetadata(PagedFontResult pagedResult, String sourcePath) {
+        List<DocumentChunk> chunks = new ArrayList<>();
+        Map<Integer, String> pageTexts = pagedResult.getPageTexts();
+        Map<Integer, List<FontAwareTextStripper.TextWithFont>> pageFontElements = pagedResult.getPageFontElements();
+        
+        // Extract just the filename from the full path
+        String fileName = java.nio.file.Paths.get(sourcePath).getFileName().toString();
+        
+        int chunkIndex = 0;
+        String currentChapter = null;
+        
+        for (Map.Entry<Integer, String> entry : pageTexts.entrySet()) {
+            int pageNumber = entry.getKey();
+            String pageText = entry.getValue();
+            List<FontAwareTextStripper.TextWithFont> fontElements = pageFontElements.get(pageNumber);
+            
+            if (pageText == null || pageText.trim().isEmpty()) {
+                continue;
+            }
+            
+            String pageChapter = detectChapterFromFontElements(fontElements);
+            if (pageChapter != null) {
+                log.debug("Found chapter on page {}: '{}'", pageNumber, pageChapter);
+                currentChapter = pageChapter;
+            }
+            
+            List<String> pageChunks = chunkText(pageText);
+            
+            for (String chunkContent : pageChunks) {
+                DocumentChunk chunk = new DocumentChunk(
+                    chunkContent, 
+                    fileName, 
+                    pageNumber, 
+                    currentChapter,
+                    null,  // heading
+                    null,  // subheading
+                    chunkIndex++
+                );
+                chunks.add(chunk);
+            }
+        }
+        
+        return chunks;
+    }
+    
+    public List<DocumentChunk> chunkTextWithOutlineMetadata(PagedFontResult pagedResult, Map<Integer, String[]> outline, String sourcePath) {
+        List<DocumentChunk> chunks = new ArrayList<>();
+        Map<Integer, String> pageTexts = pagedResult.getPageTexts();
+        
+        // Extract just the filename from the full path
+        String fileName = java.nio.file.Paths.get(sourcePath).getFileName().toString();
+        
+        int chunkIndex = 0;
+        String currentChapter = null;
+        String currentHeading = null;
+        String currentSubheading = null;
+        
+        for (Map.Entry<Integer, String> entry : pageTexts.entrySet()) {
+            int pageNumber = entry.getKey();
+            String pageText = entry.getValue();
+            
+            if (pageText == null || pageText.trim().isEmpty()) {
+                continue;
+            }
+            
+            // Check if this page starts a new section according to outline
+            if (outline.containsKey(pageNumber)) {
+                String[] hierarchy = outline.get(pageNumber);
+                currentChapter = hierarchy[0];
+                currentHeading = hierarchy[1];
+                currentSubheading = hierarchy[2];
+                
+                String hierarchyStr = String.join(" → ", java.util.Arrays.stream(hierarchy)
+                    .filter(s -> s != null)
+                    .toArray(String[]::new));
+                log.debug("Outline hierarchy on page {}: '{}'", pageNumber, hierarchyStr);
+            }
+            
+            List<String> pageChunks = chunkText(pageText);
+            
+            for (String chunkContent : pageChunks) {
+                DocumentChunk chunk = new DocumentChunk(
+                    chunkContent, 
+                    fileName, 
+                    pageNumber, 
+                    currentChapter,
+                    currentHeading,
+                    currentSubheading,
+                    chunkIndex++
+                );
+                chunks.add(chunk);
+            }
+        }
+        
+        return chunks;
+    }
+    
+    private String detectChapter(String text) {
+        String[] lines = text.split("\n");
+        for (String line : lines) {
+            line = line.trim();
+            if (line.matches("(?i)chapter\\s+\\d+.*|\\d+\\.\\s+.*|section\\s+\\d+.*")) {
+                return line.length() > 50 ? line.substring(0, 50) + "..." : line;
+            }
+        }
+        return null;
+    }
+    
+    private String detectChapterFromFontElements(List<FontAwareTextStripper.TextWithFont> fontElements) {
+        if (fontElements == null || fontElements.isEmpty()) {
+            return null;
+        }
+        
+        for (FontAwareTextStripper.TextWithFont element : fontElements) {
+            if (element.isHeader() && element.text().trim().length() > 0) {
+                String headerText = element.getCleanText().trim();
+                return headerText.length() > 50 ? headerText.substring(0, 50) + "..." : headerText;
+            }
+        }
+        
+        return null;
+    }
+    
+    public List<String> chunkText(String text) {
+        List<String> chunks = new ArrayList<>();
+        
+        if (text == null || text.isEmpty()) {
+            return chunks;
+        }
+        
+        int start = 0;
+        while (start < text.length()) {
+            int end = Math.min(start + getChunkSize(), text.length());
+            
+            if (end < text.length()) {
+                int lastSpace = text.lastIndexOf(' ', end);
+                if (lastSpace > start) {
+                    end = lastSpace;
+                }
+            }
+            
+            chunks.add(text.substring(start, end).trim());
+            
+            if (end >= text.length()) {
+                break;
+            }
+            
+            start = Math.max(start + 1, end - getOverlap());
+        }
+        
+        return chunks;
+    }
+    
+    public List<String> chunkBySentences(String text, int maxSentencesPerChunk) {
+        List<String> chunks = new ArrayList<>();
+        
+        if (text == null || text.isEmpty()) {
+            return chunks;
+        }
+        
+        String[] sentences = text.split("(?<=[.!?])\\s+");
+        StringBuilder currentChunk = new StringBuilder();
+        int sentenceCount = 0;
+        
+        for (String sentence : sentences) {
+            if (sentenceCount > 0 && sentenceCount >= maxSentencesPerChunk) {
+                chunks.add(currentChunk.toString().trim());
+                currentChunk = new StringBuilder();
+                sentenceCount = 0;
+            }
+            
+            if (currentChunk.length() > 0) {
+                currentChunk.append(" ");
+            }
+            currentChunk.append(sentence.trim());
+            sentenceCount++;
+        }
+        
+        if (currentChunk.length() > 0) {
+            chunks.add(currentChunk.toString().trim());
+        }
+        
+        return chunks;
+    }
+}
