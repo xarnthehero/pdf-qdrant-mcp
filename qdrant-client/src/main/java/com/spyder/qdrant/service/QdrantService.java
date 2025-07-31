@@ -34,44 +34,32 @@ public class QdrantService {
             client.getCollectionInfoAsync(properties.getCollection()).get();
             log.info("Collection '{}' already exists", properties.getCollection());
         } catch (Exception e) {
-            log.info("Creating collection '{}' with named vector via REST API", properties.getCollection());
-            createCollectionViaRest(embeddingProperties.getDimensions());
+            log.info("Creating collection '{}'", properties.getCollection());
+            createCollection(embeddingProperties.getDimensions());
         }
     }
     
-    private void createCollectionViaRest(int vectorSize) {
+    private void createCollection(int vectorSize) {
         try {
-            String jsonPayload = String.format("""
-                {
-                  "vectors": {
-                    "fast-bge-small-en-v1.5": {
-                      "size": %d,
-                      "distance": "Cosine"
-                    }
-                  }
-                }
-                """, vectorSize);
-            
-            HttpClient httpClient = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(String.format("http://%s:%d/collections/%s", 
-                    properties.getHost(), 
-                    properties.getRestPort(), 
-                    properties.getCollection())))
-                .header("Content-Type", "application/json")
-                .PUT(HttpRequest.BodyPublishers.ofString(jsonPayload))
+            VectorParams vectorParams = VectorParams.newBuilder()
+                .setSize(vectorSize)
+                .setDistance(Distance.Cosine)
                 .build();
             
-            HttpResponse<String> response = httpClient.send(request, 
-                HttpResponse.BodyHandlers.ofString());
+            VectorsConfig vectorsConfig = VectorsConfig.newBuilder()
+                .setParams(vectorParams)
+                .build();
             
-            if (response.statusCode() == 200) {
-                log.info("Collection '{}' created successfully with named vector", properties.getCollection());
-            } else {
-                throw new RuntimeException("Failed to create collection: " + response.body());
-            }
+            CreateCollection createCollection = CreateCollection.newBuilder()
+                .setCollectionName(properties.getCollection())
+                .setVectorsConfig(vectorsConfig)
+                .build();
+            
+            client.createCollectionAsync(createCollection).get();
+            log.info("Collection '{}' created successfully", properties.getCollection());
+            
         } catch (Exception ex) {
-            log.error("Failed to create collection via REST API: {}", ex.getMessage());
+            log.error("Failed to create collection via client library: {}", ex.getMessage());
             throw new RuntimeException("Collection creation failed", ex);
         }
     }
@@ -121,13 +109,9 @@ public class QdrantService {
             }
         }
 
-        // Create named vector for upload
-        Points.NamedVectors namedVectors = Points.NamedVectors.newBuilder()
-            .putVectors("fast-bge-small-en-v1.5", vector)
-            .build();
-        
+        // Create vector for upload
         Points.Vectors vectors = Points.Vectors.newBuilder()
-            .setVectors(namedVectors)
+            .setVector(vector)
             .build();
         
         return PointStruct.newBuilder()
