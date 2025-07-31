@@ -1,4 +1,4 @@
-package com.spyder.model;
+package com.spyder.pdfprocessing.model;
 
 import lombok.Getter;
 import org.apache.pdfbox.pdmodel.PDPage;

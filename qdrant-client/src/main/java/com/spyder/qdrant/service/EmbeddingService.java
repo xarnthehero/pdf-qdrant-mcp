@@ -1,7 +1,7 @@
-package com.spyder.service;
+package com.spyder.qdrant.service;
 
-import com.spyder.model.DocumentChunk;
-import com.spyder.config.ApplicationProperties;
+import com.spyder.qdrant.model.DocumentChunk;
+import com.spyder.qdrant.config.EmbeddingProperties;
 import ai.djl.huggingface.tokenizers.Encoding;
 import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
 import ai.onnxruntime.*;
@@ -19,37 +19,37 @@ import java.util.*;
 @Slf4j
 @Service
 public class EmbeddingService {
-    private final ApplicationProperties properties;
+    private final EmbeddingProperties properties;
     private OrtEnvironment environment;
     private OrtSession session;
     private HuggingFaceTokenizer tokenizer;
     
-    public EmbeddingService(ApplicationProperties properties) {
+    public EmbeddingService(EmbeddingProperties properties) {
         this.properties = properties;
     }
     
     @PostConstruct
     public void initialize() throws OrtException, IOException {
-        log.info("Initializing ONNX embedding service with model: {}", properties.getEmbedding().getModel().getName());
+        log.info("Initializing ONNX embedding service with model: {}", properties.getModel().getName());
         
         // Initialize ONNX Runtime environment
         environment = OrtEnvironment.getEnvironment();
         
         // Load the ONNX model
-        Path modelPath = Paths.get(properties.getEmbedding().getModel().getOnnxPath());
+        Path modelPath = Paths.get(properties.getModel().getOnnxPath());
         if (!Files.exists(modelPath)) {
             throw new RuntimeException("ONNX model file not found at: " + modelPath + 
-                "\nPlease download the BAAI/bge-small-en-v1.5 ONNX model and place it in the models/ directory.");
+                "\nPlease see EMBEDDING_SETUP.md for setup instructions.");
         }
         
         session = environment.createSession(modelPath.toString(), new OrtSession.SessionOptions());
         log.info("ONNX model loaded successfully from: {}", modelPath);
         
         // Load the tokenizer
-        Path tokenizerPath = Paths.get(properties.getEmbedding().getModel().getTokenizerPath());
+        Path tokenizerPath = Paths.get(properties.getModel().getTokenizerPath());
         if (!Files.exists(tokenizerPath)) {
             throw new RuntimeException("Tokenizer file not found at: " + tokenizerPath + 
-                "\nPlease download the tokenizer.json file and place it in the models/ directory.");
+                "\nPlease see EMBEDDING_SETUP.md for setup instructions.");
         }
         
         tokenizer = HuggingFaceTokenizer.newInstance(tokenizerPath);
@@ -77,7 +77,7 @@ public class EmbeddingService {
      */
     public List<float[]> generateEmbeddings(List<DocumentChunk> chunks) {
         log.info("Generating {}-dimensional embeddings for {} chunks using BAAI/bge-small-en-v1.5", 
-                properties.getEmbedding().getDimensions(), chunks.size());
+                properties.getDimensions(), chunks.size());
         
         List<float[]> embeddings = new ArrayList<>();
         
@@ -88,7 +88,7 @@ public class EmbeddingService {
             } catch (Exception e) {
                 log.error("Failed to generate embedding for chunk {}: {}", chunk.getId(), e.getMessage());
                 // Fallback to zero vector if embedding fails
-                embeddings.add(new float[properties.getEmbedding().getDimensions()]);
+                embeddings.add(new float[properties.getDimensions()]);
             }
         }
         
@@ -104,7 +104,7 @@ public class EmbeddingService {
             return generateSingleEmbedding(query);
         } catch (Exception e) {
             log.error("Failed to generate query embedding: {}", e.getMessage());
-            return new float[properties.getEmbedding().getDimensions()];
+            return new float[properties.getDimensions()];
         }
     }
     
@@ -118,7 +118,7 @@ public class EmbeddingService {
         long[] attentionMask = encoding.getAttentionMask();
         
         // Truncate to max length if necessary
-        int maxLength = properties.getEmbedding().getModel().getMaxLength();
+        int maxLength = properties.getModel().getMaxLength();
         if (inputIds.length > maxLength) {
             inputIds = Arrays.copyOf(inputIds, maxLength);
             attentionMask = Arrays.copyOf(attentionMask, maxLength);

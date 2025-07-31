@@ -24,10 +24,21 @@
         <onnxruntime.version>1.16.3</onnxruntime.version>
         <tokenizers.version>0.24.0</tokenizers.version>
     </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.qdrant</groupId>
+            <artifactId>client</artifactId>
+        </dependency>
+    </dependencies>
 
     <modules>
+        <module>qdrant-client</module>
         <module>pdf-processing</module>
-	<!--<module>mcp-server</module>-->
+	    <module>mcp-server</module>
     </modules>
 
     <repositories>
@@ -126,6 +137,23 @@
                 <groupId>ai.djl.huggingface</groupId>
                 <artifactId>tokenizers</artifactId>
                 <version>${tokenizers.version}</version>
+            </dependency>
+            
+            <!-- gRPC dependencies -->
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-stub</artifactId>
+                <version>1.58.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-protobuf</artifactId>
+                <version>1.58.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-netty-shaded</artifactId>
+                <version>1.58.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

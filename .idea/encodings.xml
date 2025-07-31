@@ -5,6 +5,8 @@
     <file url="file://$PROJECT_DIR$/mcp-server/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/pdf-processing/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/pdf-processing/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/qdrant-client/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/qdrant-client/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
   </component>

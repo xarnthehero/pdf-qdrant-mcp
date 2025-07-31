@@ -1,4 +1,4 @@
-package com.spyder.model;
+package com.spyder.pdfprocessing.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

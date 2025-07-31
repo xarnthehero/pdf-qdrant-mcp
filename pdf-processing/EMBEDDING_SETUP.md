@@ -4,27 +4,11 @@ This application now uses the BAAI/bge-small-en-v1.5 model via ONNX Runtime for 
 
 ## Model Download Instructions
 
-### Option 1: Using huggingface-hub CLI (Recommended)
+### Option 1: Git
 
-1. Install huggingface-hub:
+1. Clone project
 ```bash
-pip install huggingface-hub
-```
-
-2. Download the required files:
-```bash
-# Create models directory
-mkdir -p models
-
-# Download ONNX model
-huggingface-cli download BAAI/bge-small-en-v1.5 onnx/model.onnx --local-dir models/ --local-dir-use-symlinks False
-
-# Download tokenizer
-huggingface-cli download BAAI/bge-small-en-v1.5 tokenizer.json --local-dir models/ --local-dir-use-symlinks False
-
-# Rename the ONNX file to expected location
-mv models/onnx/model.onnx models/bge-small-en-v1.5.onnx
-rmdir models/onnx
+git clone https://huggingface.co/BAAI/bge-small-en-v1.5
 ```
 
 ### Option 2: Manual Download

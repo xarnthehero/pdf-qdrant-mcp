@@ -1,4 +1,4 @@
-package com.spyder.model;
+package com.spyder.qdrant.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

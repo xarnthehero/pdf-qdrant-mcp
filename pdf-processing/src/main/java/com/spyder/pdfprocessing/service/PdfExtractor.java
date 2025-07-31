@@ -1,8 +1,8 @@
-package com.spyder.service;
+package com.spyder.pdfprocessing.service;
 
-import com.spyder.model.FontAwareTextStripper;
-import com.spyder.model.PagedFontResult;
-import com.spyder.model.PagedTextResult;
+import com.spyder.pdfprocessing.model.FontAwareTextStripper;
+import com.spyder.pdfprocessing.model.PagedFontResult;
+import com.spyder.pdfprocessing.model.PagedTextResult;
 import org.apache.pdfbox.Loader;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
