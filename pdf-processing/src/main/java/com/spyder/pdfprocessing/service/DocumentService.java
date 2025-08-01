@@ -25,6 +25,9 @@ public class DocumentService {
             throw new IllegalArgumentException("Number of chunks must match number of embeddings");
         }
         
+        log.info("Clearing existing points from collection before inserting new document");
+        qdrantService.clearAllPoints();
+        
         log.info("Upserting {} document chunks to Qdrant", chunks.size());
         
         List<PointStruct> points = new java.util.ArrayList<>();

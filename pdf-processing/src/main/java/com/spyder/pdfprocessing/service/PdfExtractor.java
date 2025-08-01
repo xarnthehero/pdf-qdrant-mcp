@@ -127,8 +127,8 @@ public class PdfExtractor {
             // Create indentation for tree structure
             String indent = "  ".repeat(depth);
             String prefix = depth == 0 ? "" : "→ ";
-            log.info("{}{}'{}''", indent, prefix, title);
-            
+            log.info("{}{}{}", indent, prefix, title);
+
             // Try to resolve destination and associate with page
             Integer pageNum = resolveDestination(item, document, indent);
             if (pageNum != null) {
@@ -162,7 +162,7 @@ public class PdfExtractor {
             // Create indentation for tree structure
             String indent = "  ".repeat(depth);
             String prefix = depth == 0 ? "" : "→ ";
-            log.info("{}{}'{}''", indent, prefix, title);
+            log.info("{}{}{}", indent, prefix, title);
             
             // Build hierarchical chapter string
             String hierarchicalChapter = String.join(" → ", currentPath);

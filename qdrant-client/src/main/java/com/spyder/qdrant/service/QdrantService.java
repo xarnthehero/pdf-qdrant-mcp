@@ -7,15 +7,22 @@ import io.qdrant.client.grpc.JsonWithInt;
 import io.qdrant.client.grpc.Points;
 import io.qdrant.client.grpc.Points.PointStruct;
 import io.qdrant.client.grpc.Points.UpsertPoints;
-import lombok.NoArgsConstructor;
+import io.qdrant.client.grpc.Points.SearchPoints;
+import io.qdrant.client.grpc.Points.ScrollPoints;
+import io.qdrant.client.grpc.Points.Filter;
+import io.qdrant.client.grpc.Points.Condition;
+import io.qdrant.client.grpc.Points.FieldCondition;
+import io.qdrant.client.grpc.Points.Match;
+import io.qdrant.client.grpc.Points.DeletePoints;
+import io.qdrant.client.grpc.Collections.CreateCollection;
+import io.qdrant.client.grpc.Collections.VectorParams;
+import io.qdrant.client.grpc.Collections.VectorsConfig;
+import io.qdrant.client.grpc.Collections.Distance;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -130,6 +137,23 @@ public class QdrantService {
         }
     }
     
+    public void clearAllPoints() throws ExecutionException, InterruptedException {
+        try {
+            DeletePoints deletePoints = DeletePoints.newBuilder()
+                .setCollectionName(properties.getCollection())
+                .setPoints(Points.PointsSelector.newBuilder()
+                    .setFilter(Filter.newBuilder().build())
+                    .build())
+                .build();
+            
+            client.deleteAsync(deletePoints).get();
+            log.info("Successfully cleared all points from collection '{}'", properties.getCollection());
+        } catch (Exception e) {
+            log.error("Failed to clear points from collection '{}': {}", properties.getCollection(), e.getMessage());
+            throw e;
+        }
+    }
+    
     public Map<String, Object> convertPointToMap(Points.ScoredPoint point) {
         Map<String, Object> result = new HashMap<>();
         
@@ -154,8 +178,110 @@ public class QdrantService {
         return result;
     }
     
+    public Map<String, Object> convertRetrievedPointToMap(Points.RetrievedPoint point) {
+        Map<String, Object> result = new HashMap<>();
+        
+        // RetrievedPoint doesn't have a score since it's from filtered search, not similarity search
+        result.put("id", point.getId().getUuid());
+        
+        Map<String, Object> payload = new HashMap<>();
+        for (Map.Entry<String, JsonWithInt.Value> entry : point.getPayloadMap().entrySet()) {
+            JsonWithInt.Value value = entry.getValue();
+            if (value.hasStringValue()) {
+                payload.put(entry.getKey(), value.getStringValue());
+            } else if (value.hasIntegerValue()) {
+                payload.put(entry.getKey(), value.getIntegerValue());
+            } else if (value.hasDoubleValue()) {
+                payload.put(entry.getKey(), value.getDoubleValue());
+            } else if (value.hasBoolValue()) {
+                payload.put(entry.getKey(), value.getBoolValue());
+            }
+        }
+        result.put("payload", payload);
+        
+        return result;
+    }
+    
     public String getCollectionName() {
         return properties.getCollection();
+    }
+    
+    /**
+     * Search for similar vectors in the collection.
+     */
+    public List<Points.ScoredPoint> searchSimilarVectors(float[] queryVector, int limit) throws ExecutionException, InterruptedException {
+        // Convert float array to Qdrant vector format
+        List<Float> vectorData = new ArrayList<>();
+        for (float f : queryVector) {
+            vectorData.add(f);
+        }
+        
+        // Create vector for search
+        SearchPoints searchPoints = SearchPoints.newBuilder()
+            .setCollectionName(properties.getCollection())
+            .addAllVector(vectorData)
+            .setLimit(limit)
+            .setWithPayload(Points.WithPayloadSelector.newBuilder().setEnable(true).build())
+            .build();
+        
+        return client.searchAsync(searchPoints).get();
+    }
+    
+    /**
+     * Search points based on metadata filters using scroll API for better performance.
+     */
+    public List<Points.RetrievedPoint> searchWithFilters(String chapter, String heading, String subheading, Integer pageNumber, int limit) throws ExecutionException, InterruptedException {
+        List<Condition> conditions = new ArrayList<>();
+        
+        // Add conditions based on provided filters
+        if (chapter != null && !chapter.trim().isEmpty()) {
+            conditions.add(Condition.newBuilder()
+                .setField(FieldCondition.newBuilder()
+                    .setKey("chapter")
+                    .setMatch(Match.newBuilder().setText(chapter).build())
+                    .build())
+                .build());
+        }
+
+        if (heading != null && !heading.trim().isEmpty()) {
+            conditions.add(Condition.newBuilder()
+                .setField(FieldCondition.newBuilder()
+                    .setKey("heading")
+                    .setMatch(Match.newBuilder().setText(heading).build())
+                    .build())
+                .build());
+        }
+
+        if (subheading != null && !subheading.trim().isEmpty()) {
+            conditions.add(Condition.newBuilder()
+                .setField(FieldCondition.newBuilder()
+                    .setKey("subheading")
+                    .setMatch(Match.newBuilder().setText(subheading).build())
+                    .build())
+                .build());
+        }
+
+        if (pageNumber != null) {
+            conditions.add(Condition.newBuilder()
+                .setField(FieldCondition.newBuilder()
+                    .setKey("page_number")
+                    .setMatch(Match.newBuilder().setInteger(pageNumber.longValue()).build())
+                    .build())
+                .build());
+        }
+        
+        Filter filter = Filter.newBuilder()
+            .addAllMust(conditions)
+            .build();
+        
+        ScrollPoints scrollPoints = ScrollPoints.newBuilder()
+            .setCollectionName(properties.getCollection())
+            .setFilter(filter)
+            .setLimit(limit)
+            .setWithPayload(Points.WithPayloadSelector.newBuilder().setEnable(true).build())
+            .build();
+        
+        return client.scrollAsync(scrollPoints).get().getResultList();
     }
     
     public void close() {
