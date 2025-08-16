@@ -2,9 +2,8 @@ package com.spyder.pdfprocessing.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.spyder.qdrant.model.DocumentChunk;
 import com.spyder.pdfprocessing.model.PagedFontResult;
-import com.spyder.pdfprocessing.config.ApplicationProperties;
+import com.spyder.qdrant.model.DocumentChunk;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Service;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
-
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +23,7 @@ public class PdfProcessingService {
     private final PdfExtractor pdfExtractor;
     private final TextChunker textChunker;
     private final ObjectMapper objectMapper;
-    private final ApplicationProperties properties;
-    
+
     public List<DocumentChunk> processPdf(String pdfPath) throws IOException {
         log.info("Starting PDF processing for: {}", pdfPath);
         

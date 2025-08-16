@@ -4,20 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="05012b3c-1bea-41e9-b18d-18d97d905242" name="MCP" comment="Add MCP server outline, move qdrant functionality to its own module">
-      <change beforePath="$PROJECT_DIR$/.idea/codestream.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/codestream.xml" afterDir="false" />
+    <list default="true" id="05012b3c-1bea-41e9-b18d-18d97d905242" name="MCP" comment="Improve MCP server&#10;&#10;1. Break out sse and stdio into profiles&#10;2. Move shared embedding and qdrant config into qdrant-client application properties&#10;3. Sort query results by score order desc&#10;&#10;Removed unused methods and imports">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mcp-server/src/main/java/com/spyder/mcp/service/QdrantMcpSearchService.java" beforeDir="false" afterPath="$PROJECT_DIR$/mcp-server/src/main/java/com/spyder/mcp/service/QdrantMcpSearchService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mcp-server/src/main/java/com/spyder/mcp/tools/QdrantTools.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mcp-server/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/mcp-server/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdf-processing/src/main/java/com/spyder/pdfprocessing/service/DocumentService.java" beforeDir="false" afterPath="$PROJECT_DIR$/pdf-processing/src/main/java/com/spyder/pdfprocessing/service/DocumentService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdf-processing/src/main/java/com/spyder/pdfprocessing/service/PdfExtractor.java" beforeDir="false" afterPath="$PROJECT_DIR$/pdf-processing/src/main/java/com/spyder/pdfprocessing/service/PdfExtractor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/qdrant-client/src/main/java/com/spyder/qdrant/model/DocumentChunk.java" beforeDir="false" afterPath="$PROJECT_DIR$/qdrant-client/src/main/java/com/spyder/qdrant/model/DocumentChunk.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/qdrant-client/src/main/java/com/spyder/qdrant/service/QdrantService.java" beforeDir="false" afterPath="$PROJECT_DIR$/qdrant-client/src/main/java/com/spyder/qdrant/service/QdrantService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pdf-processing/src/main/java/com/spyder/pdfprocessing/service/TextChunker.java" beforeDir="false" afterPath="$PROJECT_DIR$/pdf-processing/src/main/java/com/spyder/pdfprocessing/service/TextChunker.java" afterDir="false" />
     </list>
-    <list id="4a9e3cbe-846f-4d73-9d69-d756e8c40e31" name="Do Not Commit" comment="Do Not Commit">
-      <change beforePath="$PROJECT_DIR$/pdf-processing/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/pdf-processing/src/main/resources/application.yml" afterDir="false" />
-    </list>
+    <list id="4a9e3cbe-846f-4d73-9d69-d756e8c40e31" name="Do Not Commit" comment="Do Not Commit" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -45,9 +36,13 @@
     "RequestMappingsPanelWidth1": "75",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
+    "Spring Boot.MCP SSE.executor": "Debug",
+    "Spring Boot.MCP stdio.executor": "Run",
     "Spring Boot.McpServerApplication.executor": "Run",
-    "Spring Boot.PdfProcessingApplication.executor": "Debug",
+    "Spring Boot.Pdf Load.executor": "Run",
+    "Spring Boot.PdfProcessingApplication.executor": "Run",
     "git-widget-placeholder": "main",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
@@ -60,17 +55,25 @@
   <component name="ReactorSettings">
     <option name="notificationShown" value="true" />
   </component>
-  <component name="RunManager" selected="Spring Boot.PdfProcessingApplication">
-    <configuration name="McpServerApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+  <component name="RunManager" selected="Spring Boot.MCP SSE">
+    <configuration name="MCP SSE" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
       <module name="mcp-server" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="com.spyder.mcp.McpServerApplication" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="PdfProcessingApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+    <configuration name="MCP stdio" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <module name="mcp-server" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.spyder.mcp.McpServerApplication" />
+      <option name="VM_PARAMETERS" value="-Dspring.profiles.active=stdio" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="PDF load" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
       <module name="pdf-processing" />
-      <option name="PROGRAM_PARAMETERS" value="$USER_HOME$/Downloads/Ironsworn-Starforged-Rulebook.pdf" />
+      <option name="PROGRAM_PARAMETERS" value="$USER_HOME$/Downloads/Ironsworn-Starforged-Rulebook.pdf --skip-qdrant" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="com.spyder.pdfprocessing.PdfProcessingApplication" />
       <extension name="software.aws.toolkits.jetbrains.core.execution.JavaAwsConnectionExtension">
         <option name="credential" />
@@ -82,15 +85,16 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="Spring Boot.McpServerApplication" />
-      <item itemvalue="Spring Boot.PdfProcessingApplication" />
+      <item itemvalue="Spring Boot.MCP SSE" />
+      <item itemvalue="Spring Boot.MCP stdio" />
+      <item itemvalue="Spring Boot.PDF load" />
     </list>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.26927.53" />
-        <option value="bundled-js-predefined-d6986cc7102b-09060db00ec0-JavaScript-IU-251.26927.53" />
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.23892.409" />
+        <option value="bundled-js-predefined-d6986cc7102b-e03c56caf84a-JavaScript-IU-252.23892.409" />
       </set>
     </attachedChunks>
   </component>
@@ -105,6 +109,7 @@
       <workItem from="1753817081244" duration="8578000" />
       <workItem from="1753995969085" duration="9829000" />
       <workItem from="1754010288392" duration="2402000" />
+      <workItem from="1755350271184" duration="9361000" />
     </task>
     <task id="LOCAL-00001" summary="Add MCP server outline, move qdrant functionality to its own module">
       <option name="closed" value="true" />
@@ -122,16 +127,44 @@
       <option name="project" value="LOCAL" />
       <updated>1754000260442</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Improve MCP server&#10;&#10;1. Break out sse and stdio into profiles&#10;2. Move shared embedding and qdrant config into qdrant-client application properties&#10;3. Sort query results by score order desc&#10;&#10;Removed unused methods and imports">
+      <option name="closed" value="true" />
+      <created>1755360542979</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1755360542979</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Improve MCP server&#10;&#10;1. Break out sse and stdio into profiles&#10;2. Move shared embedding and qdrant config into qdrant-client application properties&#10;3. Sort query results by score order desc&#10;&#10;Removed unused methods and imports">
+      <option name="closed" value="true" />
+      <created>1755360801939</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1755360801939</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Add MCP server outline, move qdrant functionality to its own module" />
     <MESSAGE value="Create qdrant collection via client library and removed named vector" />
-    <option name="LAST_COMMIT_MESSAGE" value="Create qdrant collection via client library and removed named vector" />
+    <MESSAGE value="Improve MCP server&#10;&#10;1. Break out sse and stdio into profiles&#10;2. Move shared embedding and qdrant config into qdrant-client application properties&#10;3. Sort query results by score order desc&#10;&#10;Removed unused methods and imports" />
+    <option name="LAST_COMMIT_MESSAGE" value="Improve MCP server&#10;&#10;1. Break out sse and stdio into profiles&#10;2. Move shared embedding and qdrant config into qdrant-client application properties&#10;3. Sort query results by score order desc&#10;&#10;Removed unused methods and imports" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -142,14 +175,19 @@
           <option name="timeStamp" value="5" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/pdf-processing/src/main/java/com/spyder/pdfprocessing/service/PdfExtractor.java</url>
-          <line>85</line>
-          <option name="timeStamp" value="6" />
+          <url>file://$PROJECT_DIR$/pdf-processing/src/main/java/com/spyder/pdfprocessing/service/TextChunker.java</url>
+          <line>89</line>
+          <option name="timeStamp" value="39" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/pdf-processing/src/main/java/com/spyder/pdfprocessing/service/PdfExtractor.java</url>
-          <line>134</line>
-          <option name="timeStamp" value="8" />
+          <url>file://$PROJECT_DIR$/pdf-processing/src/main/java/com/spyder/pdfprocessing/service/TextChunker.java</url>
+          <line>104</line>
+          <option name="timeStamp" value="40" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/mcp-server/src/main/java/com/spyder/mcp/controller/SearchController.java</url>
+          <line>43</line>
+          <option name="timeStamp" value="41" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

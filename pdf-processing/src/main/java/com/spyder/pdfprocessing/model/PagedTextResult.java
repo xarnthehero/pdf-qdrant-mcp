@@ -11,8 +11,4 @@ public class PagedTextResult {
     private String fullText;
     private Map<Integer, String> pageTexts;
     private int totalPages;
-    
-    public String getPageText(int pageNumber) {
-        return pageTexts.get(pageNumber);
-    }
 }

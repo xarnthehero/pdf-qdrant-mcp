@@ -1,10 +1,8 @@
 package com.spyder.pdfprocessing.service;
 
-import com.spyder.pdfprocessing.model.FontAwareTextStripper;
-import com.spyder.qdrant.model.DocumentChunk;
+import com.spyder.pdfprocessing.config.PdfProperties;
 import com.spyder.pdfprocessing.model.PagedFontResult;
-import com.spyder.pdfprocessing.model.PagedTextResult;
-import com.spyder.pdfprocessing.config.ApplicationProperties;
+import com.spyder.qdrant.model.DocumentChunk;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,97 +16,16 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class TextChunker {
     
-    private final ApplicationProperties properties;
+    private final PdfProperties properties;
     
     private int getChunkSize() {
-        return properties.getPdf().getChunking().getSize();
+        return properties.getChunking().getSize();
     }
     
     private int getOverlap() {
-        return properties.getPdf().getChunking().getOverlap();
+        return properties.getChunking().getOverlap();
     }
-    
-    public List<DocumentChunk> chunkTextWithMetadata(PagedTextResult pagedResult, String sourcePath) {
-        List<DocumentChunk> chunks = new ArrayList<>();
-        Map<Integer, String> pageTexts = pagedResult.getPageTexts();
-        
-        // Extract just the filename from the full path
-        String fileName = java.nio.file.Paths.get(sourcePath).getFileName().toString();
-        int chunkIndex = 0;
-        
-        for (Map.Entry<Integer, String> entry : pageTexts.entrySet()) {
-            int pageNumber = entry.getKey();
-            String pageText = entry.getValue();
-            
-            if (pageText == null || pageText.trim().isEmpty()) {
-                continue;
-            }
-            
-            List<String> pageChunks = chunkText(pageText);
-            
-            for (String chunkContent : pageChunks) {
-                String chapter = detectChapter(chunkContent);
-                DocumentChunk chunk = new DocumentChunk(
-                    chunkContent, 
-                    fileName, 
-                    pageNumber, 
-                    chapter,
-                    null,  // heading
-                    null,  // subheading
-                    chunkIndex++
-                );
-                chunks.add(chunk);
-            }
-        }
-        
-        return chunks;
-    }
-    
-    public List<DocumentChunk> chunkTextWithFontMetadata(PagedFontResult pagedResult, String sourcePath) {
-        List<DocumentChunk> chunks = new ArrayList<>();
-        Map<Integer, String> pageTexts = pagedResult.getPageTexts();
-        Map<Integer, List<FontAwareTextStripper.TextWithFont>> pageFontElements = pagedResult.getPageFontElements();
-        
-        // Extract just the filename from the full path
-        String fileName = java.nio.file.Paths.get(sourcePath).getFileName().toString();
-        
-        int chunkIndex = 0;
-        String currentChapter = null;
-        
-        for (Map.Entry<Integer, String> entry : pageTexts.entrySet()) {
-            int pageNumber = entry.getKey();
-            String pageText = entry.getValue();
-            List<FontAwareTextStripper.TextWithFont> fontElements = pageFontElements.get(pageNumber);
-            
-            if (pageText == null || pageText.trim().isEmpty()) {
-                continue;
-            }
-            
-            String pageChapter = detectChapterFromFontElements(fontElements);
-            if (pageChapter != null) {
-                log.debug("Found chapter on page {}: '{}'", pageNumber, pageChapter);
-                currentChapter = pageChapter;
-            }
-            
-            List<String> pageChunks = chunkText(pageText);
-            
-            for (String chunkContent : pageChunks) {
-                DocumentChunk chunk = new DocumentChunk(
-                    chunkContent, 
-                    fileName, 
-                    pageNumber, 
-                    currentChapter,
-                    null,  // heading
-                    null,  // subheading
-                    chunkIndex++
-                );
-                chunks.add(chunk);
-            }
-        }
-        
-        return chunks;
-    }
-    
+
     public List<DocumentChunk> chunkTextWithOutlineMetadata(PagedFontResult pagedResult, Map<Integer, String[]> outline, String sourcePath) {
         List<DocumentChunk> chunks = new ArrayList<>();
         Map<Integer, String> pageTexts = pagedResult.getPageTexts();
@@ -160,33 +77,7 @@ public class TextChunker {
         
         return chunks;
     }
-    
-    private String detectChapter(String text) {
-        String[] lines = text.split("\n");
-        for (String line : lines) {
-            line = line.trim();
-            if (line.matches("(?i)chapter\\s+\\d+.*|\\d+\\.\\s+.*|section\\s+\\d+.*")) {
-                return line.length() > 50 ? line.substring(0, 50) + "..." : line;
-            }
-        }
-        return null;
-    }
-    
-    private String detectChapterFromFontElements(List<FontAwareTextStripper.TextWithFont> fontElements) {
-        if (fontElements == null || fontElements.isEmpty()) {
-            return null;
-        }
-        
-        for (FontAwareTextStripper.TextWithFont element : fontElements) {
-            if (element.isHeader() && element.text().trim().length() > 0) {
-                String headerText = element.getCleanText().trim();
-                return headerText.length() > 50 ? headerText.substring(0, 50) + "..." : headerText;
-            }
-        }
-        
-        return null;
-    }
-    
+
     public List<String> chunkText(String text) {
         List<String> chunks = new ArrayList<>();
         

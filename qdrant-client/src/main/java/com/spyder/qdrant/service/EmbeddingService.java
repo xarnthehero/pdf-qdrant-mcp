@@ -1,15 +1,18 @@
 package com.spyder.qdrant.service;
 
-import com.spyder.qdrant.model.DocumentChunk;
-import com.spyder.qdrant.config.EmbeddingProperties;
 import ai.djl.huggingface.tokenizers.Encoding;
 import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
-import ai.onnxruntime.*;
+import ai.onnxruntime.OnnxTensor;
+import ai.onnxruntime.OrtEnvironment;
+import ai.onnxruntime.OrtException;
+import ai.onnxruntime.OrtSession;
+import com.spyder.qdrant.config.EmbeddingProperties;
+import com.spyder.qdrant.model.DocumentChunk;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

@@ -2,10 +2,8 @@ package com.spyder.pdfprocessing.service;
 
 import com.spyder.pdfprocessing.model.FontAwareTextStripper;
 import com.spyder.pdfprocessing.model.PagedFontResult;
-import com.spyder.pdfprocessing.model.PagedTextResult;
-import org.apache.pdfbox.Loader;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -16,45 +14,16 @@ import org.apache.pdfbox.pdmodel.interactive.documentnavigation.destination.PDPa
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 @Slf4j
 @Service
 public class PdfExtractor {
-    
-    public String extractText(String pdfPath) throws IOException {
-        try (PDDocument document = Loader.loadPDF(new File(pdfPath))) {
-            PDFTextStripper pdfStripper = new PDFTextStripper();
-            return pdfStripper.getText(document);
-        }
-    }
-    
-    public PagedTextResult extractTextWithPages(String pdfPath) throws IOException {
-        try (PDDocument document = Loader.loadPDF(new File(pdfPath))) {
-            PDFTextStripper pdfStripper = new PDFTextStripper();
-            
-            String fullText = pdfStripper.getText(document);
-            int totalPages = document.getNumberOfPages();
-            Map<Integer, String> pageTexts = new HashMap<>();
-            
-            for (int page = 1; page <= totalPages; page++) {
-                pdfStripper.setStartPage(page);
-                pdfStripper.setEndPage(page);
-                String pageText = pdfStripper.getText(document);
-                pageTexts.put(page, pageText);
-            }
-            
-            return new PagedTextResult(fullText, pageTexts, totalPages);
-        }
-    }
-    
+
     public PagedFontResult extractTextWithFontInfo(String pdfPath) throws IOException {
         try (PDDocument document = Loader.loadPDF(new File(pdfPath))) {
             PDFTextStripper basicStripper = new PDFTextStripper();
@@ -97,25 +66,7 @@ public class PdfExtractor {
             return pageToHierarchy;
         }
     }
-    
-    public Map<Integer, String> extractOutline(String pdfPath) throws IOException {
-        try (PDDocument document = Loader.loadPDF(new File(pdfPath))) {
-            PDDocumentCatalog catalog = document.getDocumentCatalog();
-            PDDocumentOutline outline = catalog.getDocumentOutline();
-            
-            Map<Integer, String> pageToChapter = new TreeMap<>();
-            
-            if (outline != null) {
-                log.info("PDF Outline Structure:");
-                processOutlineItem(outline.getFirstChild(), document, pageToChapter, 0, new ArrayList<>());
-            } else {
-                log.info("No outline found in PDF");
-            }
-            
-            return pageToChapter;
-        }
-    }
-    
+
     private void processOutlineItemHierarchy(PDOutlineItem item, PDDocument document, Map<Integer, String[]> pageToHierarchy, int depth, List<String> parentPath) throws IOException {
         while (item != null) {
             String title = item.getTitle();
@@ -130,7 +81,7 @@ public class PdfExtractor {
             log.info("{}{}{}", indent, prefix, title);
 
             // Try to resolve destination and associate with page
-            Integer pageNum = resolveDestination(item, document, indent);
+            Integer pageNum = resolveDestination(item, document);
             if (pageNum != null) {
                 // Convert to array: [chapter, heading, subheading]
                 String[] hierarchy = new String[3];
@@ -150,39 +101,8 @@ public class PdfExtractor {
             item = item.getNextSibling();
         }
     }
-    
-    private void processOutlineItem(PDOutlineItem item, PDDocument document, Map<Integer, String> pageToChapter, int depth, List<String> parentPath) throws IOException {
-        while (item != null) {
-            String title = item.getTitle();
-            
-            // Create current path including this item
-            List<String> currentPath = new ArrayList<>(parentPath);
-            currentPath.add(title);
-            
-            // Create indentation for tree structure
-            String indent = "  ".repeat(depth);
-            String prefix = depth == 0 ? "" : "→ ";
-            log.info("{}{}{}", indent, prefix, title);
-            
-            // Build hierarchical chapter string
-            String hierarchicalChapter = String.join(" → ", currentPath);
-            
-            // Try to resolve destination and associate with page
-            Integer pageNum = resolveDestination(item, document, indent);
-            if (pageNum != null) {
-                log.info("{}    [Page {}] {}", indent, pageNum, hierarchicalChapter);
-                pageToChapter.put(pageNum, hierarchicalChapter);
-            }
-            
-            if (item.hasChildren()) {
-                processOutlineItem(item.getFirstChild(), document, pageToChapter, depth + 1, currentPath);
-            }
-            
-            item = item.getNextSibling();
-        }
-    }
-    
-    private Integer resolveDestination(PDOutlineItem item, PDDocument document, String indent) throws IOException {
+
+    private Integer resolveDestination(PDOutlineItem item, PDDocument document) throws IOException {
         // Check if destination is null
         if (item.getDestination() == null) {
             // Check if there's an action instead of destination
@@ -246,13 +166,5 @@ public class PdfExtractor {
         
         return null;
     }
-    
-    public String extractTextFromPage(String pdfPath, int pageNumber) throws IOException {
-        try (PDDocument document = Loader.loadPDF(new File(pdfPath))) {
-            PDFTextStripper pdfStripper = new PDFTextStripper();
-            pdfStripper.setStartPage(pageNumber);
-            pdfStripper.setEndPage(pageNumber);
-            return pdfStripper.getText(document);
-        }
-    }
+
 }

@@ -4,27 +4,14 @@ spring:
   main:
     banner-mode: "off"
     web-application-type: none
+  profiles:
+    include: qdrant
 
 # PDF Processing Configuration
 pdf:
   chunking:
     size: 1000
     overlap: 100
-
-# Embedding Configuration
-embedding:
-  dimensions: 384
-  model:
-    name: "BAAI/bge-small-en-v1.5"
-    onnx-path: "models/bge-small-en-v1.5.onnx"
-    tokenizer-path: "models/tokenizer.json"
-    max-length: 512
-
-# Qdrant Configuration
-qdrant:
-  host: localhost
-  port: 6334
-  collection: starforged
 
 # Logging
 logging:

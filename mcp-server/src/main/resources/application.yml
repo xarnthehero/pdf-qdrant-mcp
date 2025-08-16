@@ -1,6 +1,3 @@
-server:
-  port: 8080
-
 spring:
   application:
     name: starforge-mcp-server
@@ -9,34 +6,15 @@ spring:
       server:
         name: starforge-mcp-server
         version: 1.0.0
-        sse-message-endpoint: /mcp/messages
         capabilities:
           tool: true
           resource: false
           prompt: false
           completion: false
-
-# Qdrant Configuration
-qdrant:
-  host: localhost
-  port: 6334
-  rest-port: 6333
-  collection: starforged
-
-# Embedding Configuration
-embedding:
-  dimensions: 384
-  model:
-    name: BAAI/bge-small-en-v1.5
-    onnx-path: models/bge-small-en-v1.5.onnx
-    tokenizer-path: models/tokenizer.json
-    max-length: 512
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: mappings,health,info
+  profiles:
+    include: qdrant
+  main:
+    banner-mode: off
 
 # Logging
 logging:

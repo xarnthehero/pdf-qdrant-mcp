@@ -1,0 +1,15 @@
+# Embedding Configuration
+embedding:
+  dimensions: 384
+  model:
+    name: "BAAI/bge-small-en-v1.5"
+    onnx-path: "/Users/spyderspann/Repository/Other/bge-small-en-v1.5/onnx/model.onnx"
+    tokenizer-path: "/Users/spyderspann/Repository/Other/bge-small-en-v1.5/tokenizer.json"
+    max-length: 512
+
+# Qdrant Configuration
+qdrant:
+  host: localhost
+  port: 6334
+  collection: starforged
+

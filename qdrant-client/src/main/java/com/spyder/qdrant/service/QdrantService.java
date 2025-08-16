@@ -3,21 +3,13 @@ package com.spyder.qdrant.service;
 import com.spyder.qdrant.config.EmbeddingProperties;
 import com.spyder.qdrant.config.QdrantProperties;
 import io.qdrant.client.QdrantClient;
-import io.qdrant.client.grpc.JsonWithInt;
-import io.qdrant.client.grpc.Points;
-import io.qdrant.client.grpc.Points.PointStruct;
-import io.qdrant.client.grpc.Points.UpsertPoints;
-import io.qdrant.client.grpc.Points.SearchPoints;
-import io.qdrant.client.grpc.Points.ScrollPoints;
-import io.qdrant.client.grpc.Points.Filter;
-import io.qdrant.client.grpc.Points.Condition;
-import io.qdrant.client.grpc.Points.FieldCondition;
-import io.qdrant.client.grpc.Points.Match;
-import io.qdrant.client.grpc.Points.DeletePoints;
 import io.qdrant.client.grpc.Collections.CreateCollection;
+import io.qdrant.client.grpc.Collections.Distance;
 import io.qdrant.client.grpc.Collections.VectorParams;
 import io.qdrant.client.grpc.Collections.VectorsConfig;
-import io.qdrant.client.grpc.Collections.Distance;
+import io.qdrant.client.grpc.JsonWithInt;
+import io.qdrant.client.grpc.Points;
+import io.qdrant.client.grpc.Points.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -127,16 +119,7 @@ public class QdrantService {
             .putAllPayload(payload)
             .build();
     }
-    
-    public void deleteCollection() throws ExecutionException, InterruptedException {
-        try {
-            client.deleteCollectionAsync(properties.getCollection()).get();
-            log.info("Collection '{}' deleted successfully", properties.getCollection());
-        } catch (Exception e) {
-            log.warn("Failed to delete collection '{}': {}", properties.getCollection(), e.getMessage());
-        }
-    }
-    
+
     public void clearAllPoints() throws ExecutionException, InterruptedException {
         try {
             DeletePoints deletePoints = DeletePoints.newBuilder()
@@ -177,35 +160,7 @@ public class QdrantService {
         
         return result;
     }
-    
-    public Map<String, Object> convertRetrievedPointToMap(Points.RetrievedPoint point) {
-        Map<String, Object> result = new HashMap<>();
-        
-        // RetrievedPoint doesn't have a score since it's from filtered search, not similarity search
-        result.put("id", point.getId().getUuid());
-        
-        Map<String, Object> payload = new HashMap<>();
-        for (Map.Entry<String, JsonWithInt.Value> entry : point.getPayloadMap().entrySet()) {
-            JsonWithInt.Value value = entry.getValue();
-            if (value.hasStringValue()) {
-                payload.put(entry.getKey(), value.getStringValue());
-            } else if (value.hasIntegerValue()) {
-                payload.put(entry.getKey(), value.getIntegerValue());
-            } else if (value.hasDoubleValue()) {
-                payload.put(entry.getKey(), value.getDoubleValue());
-            } else if (value.hasBoolValue()) {
-                payload.put(entry.getKey(), value.getBoolValue());
-            }
-        }
-        result.put("payload", payload);
-        
-        return result;
-    }
-    
-    public String getCollectionName() {
-        return properties.getCollection();
-    }
-    
+
     /**
      * Search for similar vectors in the collection.
      */
@@ -283,8 +238,5 @@ public class QdrantService {
         
         return client.scrollAsync(scrollPoints).get().getResultList();
     }
-    
-    public void close() {
-        client.close();
-    }
+
 }

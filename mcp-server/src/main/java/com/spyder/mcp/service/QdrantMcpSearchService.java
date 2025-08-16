@@ -1,9 +1,9 @@
 package com.spyder.mcp.service;
 
-import com.spyder.qdrant.service.QdrantService;
 import com.spyder.qdrant.service.EmbeddingService;
-import io.qdrant.client.grpc.Points;
+import com.spyder.qdrant.service.QdrantService;
 import io.qdrant.client.grpc.JsonWithInt;
+import io.qdrant.client.grpc.Points;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
@@ -46,9 +46,9 @@ public class QdrantMcpSearchService {
                 formattedResults.add(convertPointToMap(point));
             }
             
-            // Sort by chunk index for better readability
-            sortByChunkIndex(formattedResults);
-            
+            // Sort by score (highest first) for relevance-based ordering
+            formattedResults.sort(sortByScoreComparator());
+
             log.info("Found {} similar chunks for query: '{}'", formattedResults.size(), query);
             return formattedResults;
             
@@ -56,6 +56,12 @@ public class QdrantMcpSearchService {
             log.error("Failed to search for similar chunks with query: '{}', error: {}", query, e.getMessage(), e);
             return new ArrayList<>();
         }
+    }
+
+    private Comparator<Map<String, Object>> sortByScoreComparator() {
+        Comparator<Map<String, Object>> ascendingOrderComparator = Comparator.comparingDouble(value -> Optional.ofNullable((float)value.get("score"))
+                .orElseThrow(() -> new RuntimeException("No score found")));
+        return ascendingOrderComparator.reversed();
     }
 
     @Tool(

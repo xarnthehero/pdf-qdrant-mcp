@@ -1,0 +1,21 @@
+spring:
+  ai:
+    mcp:
+      server:
+        stdio: false
+        sse-message-endpoint: /mcp/messages
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: mappings,health,info
+
+#logging:
+#  level:
+#    com.spyder: DEBUG
+#    org.springframework.web: DEBUG
+#    org.springframework.ai: DEBUG
